@@ -1,2 +1,2 @@
-# node-red-context-couchdb
-A Node-RED Context store plugin backed by CouchDB
+# node-red-context-pouchdb
+A Node-RED Context store plugin backed by PouchDB

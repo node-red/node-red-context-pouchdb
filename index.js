@@ -158,7 +158,7 @@ PouchDB.prototype.close = function () {
 
 PouchDB.prototype.get = function (scope, key, callback) {
     if(typeof callback !== "function"){
-        throw new Error("Callback must be a function");
+        throw new Error("Async storage - a callback must be defined");
     }
     db.get(scope).then(function (doc) {
         if (doc.data) {

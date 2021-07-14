@@ -154,3 +154,42 @@ db_source.replicate.to(db_target, {
 }})
 ```
 Reference: [PouchDB filtered replication](https://pouchdb.com/api.html#filtered-replication)
+
+- You can perform replication from the function node.
+To execute the flow, you need to add pouchdb require to the functionGlobalContext in setting.js.
+
+Setting example of setting.js:
+```javascript
+functionGlobalContext {
+    pouchdb: require('pouchdb').plugin(require('pouchdb-adapter-node-websql'))
+}
+```
+```javascript
+contextStorage: {
+    default: "memoryOnly",
+    memoryOnly: {
+        module: 'memory'
+    },
+    pouchdb: {
+        module: require("node-red-context-pouchdb"),
+    }
+},
+```
+The following is a sample flow that replicates the global context of machine A to machine B using remote database.
+For operational safety reasons, do not run the context update flow at the same time.
+
+Replicate the global context of Node-RED running on machine A to a remote DB (CouchDB).
+
+Flow example of global context replication to CouchDB:
+```json
+[{"id":"c054df6e.63e4f","type":"inject","z":"24e3dfb2.5e0d2","name":"","props":[{"p":"payload"},{"p":"topic","vt":"str"}],"repeat":"","crontab":"","once":false,"onceDelay":0.1,"topic":"","payload":"","payloadType":"date","x":220,"y":220,"wires":[["fb91e7f9.f74868"]]},{"id":"fb91e7f9.f74868","type":"function","z":"24e3dfb2.5e0d2","name":"Global context replication to CouchDB","func":"var pd = global.get(\"pouchdb\");\n\nvar source = \"/home/user/.node-red/context/context.db\";\nvar target = \"http://couchdb-server:5984/couchdb_mycouchdb_1\";\n\nvar db_source = new pd(source, { adapter: 'websql' });\nvar db_target = new pd(target);\n\ndb_source.replicate.to(db_target,{doc_ids: ['global']})\n.on('complete', function () {\n        console.log (\"Database replicated.\");\n}).on('error', function (err) {\n        console.log(err);\n});","outputs":1,"noerr":0,"initialize":"","finalize":"","libs":[],"x":490,"y":220,"wires":[[]]}]
+```
+Set the source and target in the function node according to the settings of the usage environment.
+
+Replicate the global context saved in the remote DB (CouchDB) to Node-RED running on machine B.
+
+Flow example of global context replication from CouchDB:
+```json
+[{"id":"e2aa34a6.f1d6f8","type":"inject","z":"d2880c73.3f51f","name":"","props":[{"p":"payload"},{"p":"topic","vt":"str"}],"repeat":"","crontab":"","once":false,"onceDelay":0.1,"topic":"","payload":"","payloadType":"date","x":180,"y":100,"wires":[["bbc87d2e.47404"]]},{"id":"bbc87d2e.47404","type":"function","z":"d2880c73.3f51f","name":"Global context replication from CouchDB","func":"var pd = global.get(\"pouchdb\");\n\nvar source = \"http://couchdb-server:5984/couchdb_mycouchdb_1\";\nvar target = \"/home/user/.node-red/context/context.db\";\n\nvar db_source = new pd(source);\nvar db_target = new pd(target,{adapter: 'websql'});\n\ndb_target.replicate.from(db_source,{doc_ids: ['global']})\n.on('complete', function () {\n        console.log (\"Database replicated.\");\n}).on('error', function (err) {\n        console.log(err);\n});","outputs":1,"noerr":0,"initialize":"","finalize":"","libs":[],"x":460,"y":100,"wires":[[]]}]
+```
+Set the source and target in the function node according to the settings of the usage environment.
